@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 class Decoder(nn.Module):
-    def __init__(self, vocab_size, latent_variable_size, rnn_size, rnn_num_layers, embed_size):
+    def __init__(self, vocab_size, latent_variable_size, rnn_size, rnn_num_layers, embed_size, max_seq_len):
         super(Decoder, self).__init__()
 
         self.vocab_size = vocab_size
@@ -13,29 +13,56 @@ class Decoder(nn.Module):
         self.embed_size = embed_size
         self.rnn_num_layers = rnn_num_layers
 
-        self.cnn = nn.Sequential(
-            nn.ConvTranspose1d(self.latent_variable_size, 512, 4, 2, 0),
-            nn.BatchNorm1d(512),
-            nn.ELU(),
+        if max_seq_len == 50:
+            self.cnn = nn.Sequential(
+                nn.ConvTranspose1d(self.latent_variable_size, 512, 4, 2, 0),
+                nn.BatchNorm1d(512),
+                nn.ELU(),
 
-            nn.ConvTranspose1d(512, 512, 4, 2, 0, output_padding=1),
-            nn.BatchNorm1d(512),
-            nn.ELU(),
+                #nn.ConvTranspose1d(512, 512, 4, 2, 0, output_padding=1),
+                #nn.BatchNorm1d(512),
+                #nn.ELU(),
 
-            nn.ConvTranspose1d(512, 256, 4, 2, 0),
-            nn.BatchNorm1d(256),
-            nn.ELU(),
+                nn.ConvTranspose1d(512, 256, 4, 2, 0, output_padding=1),
+                nn.BatchNorm1d(256),
+                nn.ELU(),
 
-            nn.ConvTranspose1d(256, 256, 4, 2, 0, output_padding=1),
-            nn.BatchNorm1d(256),
-            nn.ELU(),
+                #nn.ConvTranspose1d(256, 256, 4, 2, 0, output_padding=1),
+                #nn.BatchNorm1d(256),
+                #nn.ELU(),
 
-            nn.ConvTranspose1d(256, 128, 4, 2, 0),
-            nn.BatchNorm1d(128),
-            nn.ELU(),
+                nn.ConvTranspose1d(256, 128, 4, 2, 0),
+                nn.BatchNorm1d(128),
+                nn.ELU(),
 
-            nn.ConvTranspose1d(128, self.vocab_size, 4, 2, 0)
-        )
+                nn.ConvTranspose1d(128, self.vocab_size, 4, 2, 0, output_padding=1)
+            )
+        elif max_seq_len == 209:
+            self.cnn = nn.Sequential(
+                nn.ConvTranspose1d(self.latent_variable_size, 512, 4, 2, 0),
+                nn.BatchNorm1d(512),
+                nn.ELU(),
+
+                nn.ConvTranspose1d(512, 512, 4, 2, 0, output_padding=1),
+                nn.BatchNorm1d(512),
+                nn.ELU(),
+
+                nn.ConvTranspose1d(512, 256, 4, 2, 0, output_padding=1),
+                nn.BatchNorm1d(256),
+                nn.ELU(),
+
+                nn.ConvTranspose1d(256, 256, 4, 2, 0, output_padding=1),
+                nn.BatchNorm1d(256),
+                nn.ELU(),
+
+                nn.ConvTranspose1d(256, 128, 4, 2, 0),
+                nn.BatchNorm1d(128),
+                nn.ELU(),
+
+                nn.ConvTranspose1d(128, self.vocab_size, 4, 2, 0, output_padding=1)
+            )
+        else:
+            raise ValueError("max_seq_len must be either 50 or 209 for now")
 
         self.rnn = nn.GRU(input_size=self.vocab_size + self.embed_size,
                           hidden_size=self.rnn_size,

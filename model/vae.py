@@ -6,11 +6,11 @@ from torch.autograd import Variable
 from torch.nn.init import xavier_normal
 from .encoder import Encoder
 from .decoder import Decoder
-from utils.batchloader import BatchLoader
+from ..utils.batchloader import BatchLoader
 
 
 class VAE(nn.Module):
-    def __init__(self, vocab_size, embed_size, latent_size, decoder_size, decoder_num_layers):
+    def __init__(self, vocab_size, embed_size, latent_size, decoder_size, decoder_num_layers, max_seq_len):
         super(VAE, self).__init__()
 
         self.latent_size = latent_size
@@ -20,12 +20,12 @@ class VAE(nn.Module):
         self.embed = nn.Embedding(self.vocab_size, self.embed_size)
         self.embed.weight = xavier_normal(self.embed.weight)
 
-        self.encoder = Encoder(self.embed_size, self.latent_size)
+        self.encoder = Encoder(self.embed_size, self.latent_size, max_seq_len)
 
         self.context_to_mu = nn.Linear(self.latent_size, self.latent_size)
         self.context_to_logvar = nn.Linear(self.latent_size, self.latent_size)
 
-        self.decoder = Decoder(self.vocab_size, self.latent_size, decoder_size, decoder_num_layers, self.embed_size)
+        self.decoder = Decoder(self.vocab_size, self.latent_size, decoder_size, decoder_num_layers, self.embed_size, max_seq_len)
 
     def forward(self, drop_prob,
                 encoder_input=None,

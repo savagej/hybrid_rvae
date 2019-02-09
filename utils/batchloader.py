@@ -8,10 +8,10 @@ from six.moves import cPickle
 
 
 class BatchLoader:
-    def __init__(self, data_path='./data/ru.txt'):
+    def __init__(self, data_path='./data/ru.txt', max_seq_len=209):
         """
         :param data_path: string prefix to path of data folder
-        :param force_preprocessing: whether to force data preprocessing
+        :param max_seq_len: maximum length allowed for input sequences, must be 50 or 209 for now
         """
 
         assert isinstance(data_path, str), \
@@ -37,9 +37,15 @@ class BatchLoader:
 
         self.vocab_size, self.idx_to_char, self.char_to_idx = self.build_vocab(data)
 
-        self.max_seq_len = 209
-        data = np.array([[self.char_to_idx[char] for char in line] for line in data.split('\n')[:-1]
-                         if 70 <= len(line) <= self.max_seq_len])
+        self.max_seq_len = max_seq_len
+        if max_seq_len == 209:
+            data = np.array([[self.char_to_idx[char] for char in line] for line in data.split('\n')[:-1]
+                             if 70 <= len(line) <= self.max_seq_len])
+        elif max_seq_len == 50:
+            data = np.array([[self.char_to_idx[char] for char in line] for line in data.split('\n')[:-1]
+                             if 2 <= len(line) <= self.max_seq_len])
+        else:
+            raise ValueError("max_seq_len must be either 50 or 209 for now")
 
         self.valid_data, self.train_data = data[:self.split], data[self.split:]
 

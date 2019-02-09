@@ -4,37 +4,58 @@ import torch.nn.functional as F
 
 
 class Encoder(nn.Module):
-    def __init__(self, embed_size, latent_size):
+    def __init__(self, embed_size, latent_size, max_seq_len):
         super(Encoder, self).__init__()
 
         self.embed_size = embed_size
         self.latent_size = latent_size
 
-        self.cnn = nn.Sequential(
-            nn.Conv1d(self.embed_size, 128, 4, 2),
-            nn.BatchNorm1d(128),
-            nn.ELU(),
+        if max_seq_len == 50:
+            self.cnn = nn.Sequential(
+                nn.Conv1d(self.embed_size, 128, 4, 2),
+                nn.BatchNorm1d(128),
+                nn.ELU(),
 
-            nn.Conv1d(128, 256, 4, 2),
-            nn.BatchNorm1d(256),
-            nn.ELU(),
+                nn.Conv1d(128, 256, 4, 2),
+                nn.BatchNorm1d(256),
+                nn.ELU(),
 
-            nn.Conv1d(256, 256, 4, 2),
-            nn.BatchNorm1d(256),
-            nn.ELU(),
+                nn.Conv1d(256, 512, 4, 2),
+                nn.BatchNorm1d(512),
+                nn.ELU(),
 
-            nn.Conv1d(256, 512, 4, 2),
-            nn.BatchNorm1d(512),
-            nn.ELU(),
+                nn.Conv1d(512, self.latent_size, 4, 2),
+                nn.BatchNorm1d(self.latent_size),
+                nn.ELU()
+            )
+        elif max_seq_len == 209:
+            self.cnn = nn.Sequential(
+                nn.Conv1d(self.embed_size, 128, 4, 2),
+                nn.BatchNorm1d(128),
+                nn.ELU(),
 
-            nn.Conv1d(512, 512, 4, 2),
-            nn.BatchNorm1d(512),
-            nn.ELU(),
+                nn.Conv1d(128, 256, 4, 2),
+                nn.BatchNorm1d(256),
+                nn.ELU(),
 
-            nn.Conv1d(512, self.latent_size, 4, 2),
-            nn.BatchNorm1d(self.latent_size),
-            nn.ELU()
-        )
+                nn.Conv1d(256, 256, 4, 2),
+                nn.BatchNorm1d(256),
+                nn.ELU(),
+
+                nn.Conv1d(256, 512, 4, 2),
+                nn.BatchNorm1d(512),
+                nn.ELU(),
+
+                nn.Conv1d(512, 512, 4, 2),
+                nn.BatchNorm1d(512),
+                nn.ELU(),
+
+                nn.Conv1d(512, self.latent_size, 4, 2),
+                nn.BatchNorm1d(self.latent_size),
+                nn.ELU()
+            )
+        else:
+            raise ValueError("max_seq_len must be 50 or 209 for now")
 
     def forward(self, input):
         """
