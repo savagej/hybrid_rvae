@@ -47,7 +47,7 @@ class Decoder(nn.Module):
                 nn.BatchNorm1d(512),
                 nn.ELU(),
 
-                nn.ConvTranspose1d(512, 256, 4, 2, 0, output_padding=1),
+                nn.ConvTranspose1d(512, 256, 4, 2, 0),
                 nn.BatchNorm1d(256),
                 nn.ELU(),
 
@@ -59,7 +59,7 @@ class Decoder(nn.Module):
                 nn.BatchNorm1d(128),
                 nn.ELU(),
 
-                nn.ConvTranspose1d(128, self.vocab_size, 4, 2, 0, output_padding=1)
+                nn.ConvTranspose1d(128, self.vocab_size, 4, 2, 0)
             )
         else:
             raise ValueError("max_seq_len must be either 50 or 209 for now")
