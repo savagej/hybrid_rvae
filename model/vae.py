@@ -3,7 +3,7 @@ import torch as t
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-from torch.nn.init import xavier_normal
+from torch.nn.init import xavier_normal_
 from .encoder import Encoder
 from .decoder import Decoder
 from ..utils.batchloader import BatchLoader
@@ -18,7 +18,7 @@ class VAE(nn.Module):
         self.embed_size = embed_size
 
         self.embed = nn.Embedding(self.vocab_size, self.embed_size)
-        self.embed.weight = xavier_normal(self.embed.weight)
+        self.embed.weight = xavier_normal_(self.embed.weight)
 
         self.encoder = Encoder(self.embed_size, self.latent_size, max_seq_len)
 

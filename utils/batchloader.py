@@ -8,10 +8,11 @@ from six.moves import cPickle
 
 
 class BatchLoader:
-    def __init__(self, data_path='./data/ru.txt', max_seq_len=209):
+    def __init__(self, data_path='./data/ru.txt', max_seq_len=209, vocab=None):
         """
         :param data_path: string prefix to path of data folder
         :param max_seq_len: maximum length allowed for input sequences, must be 50 or 209 for now
+        :param vocab: tuple containing vocab_size, idx_to_char, char_to_idx
         """
 
         assert isinstance(data_path, str), \
@@ -35,7 +36,10 @@ class BatchLoader:
 
         data = open(self.data_path, 'r', encoding='utf-8').read()
 
-        self.vocab_size, self.idx_to_char, self.char_to_idx = self.build_vocab(data)
+        if vocab:
+            self.vocab_size, self.idx_to_char, self.char_to_idx = vocab
+        else:
+            self.vocab_size, self.idx_to_char, self.char_to_idx = self.build_vocab(data)
 
         self.max_seq_len = max_seq_len
         if max_seq_len == 209:
