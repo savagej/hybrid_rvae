@@ -73,7 +73,7 @@ class VAE(nn.Module):
 
         return mu, logvar
 
-    def sample(self, batch_loader: BatchLoader, use_cuda, z=None):
+    def sample(self, batch_loader, use_cuda, z=None):
 
         if z is None:
             z = Variable(t.randn([1, self.latent_size]))
@@ -84,7 +84,14 @@ class VAE(nn.Module):
 
         cnn_out = self.decoder.conv_decoder(z)
 
-        x = batch_loader.go_input(1, use_cuda)
+        #x = batch_loader.go_input(1, use_cuda)
+
+        x = np.array([[batch_loader.char_to_idx[batch_loader.go_token]]])
+        x = Variable(t.from_numpy(x)).long()
+
+        if use_cuda:
+            x = x.cuda()
+
         x = self.embed(x)
 
         result = []
@@ -94,7 +101,7 @@ class VAE(nn.Module):
             out = F.softmax(out.squeeze())
 
             out = out.data.cpu().numpy()
-            idx = batch_loader.sample_char(out)
+            idx = self.sample_char(out)
             x = batch_loader.idx_to_char[idx]
 
             if x == batch_loader.stop_token:
@@ -109,4 +116,12 @@ class VAE(nn.Module):
 
         return ''.join(result)
 
+    @staticmethod
+    def sample_char(distribution):
+        """
+        :param distribution: An array of probabilities
+        :return: An index of sampled from distribution character
+        """
+
+        return np.random.choice(len(distribution), p=distribution.ravel())
 
