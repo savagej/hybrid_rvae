@@ -2,10 +2,10 @@ from math import floor
 
 
 class Parameters:
-    def __init__(self, vocab_size):
+    def __init__(self, vocab_size, embed_size=80):
 
         self.vocab_size = vocab_size
-        self.embed_size = 80
+        self.embed_size = embed_size
 
         '''
         These sizes were actualy choosen
