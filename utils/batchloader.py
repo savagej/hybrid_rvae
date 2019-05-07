@@ -103,17 +103,23 @@ class BatchLoader:
         batch_size = len(input)
 
         '''Add go token before decoder input and stop token after decoder target'''
-        encoder_input = [[self.char_to_idx[self.go_token]] + line for line in np.copy(input)]
-        decoder_input = [[self.char_to_idx[self.go_token]] + line for line in np.copy(input)]
-        decoder_target = [line + [self.char_to_idx[self.stop_token]] for line in np.copy(input)]
+        encoder_input = [np.concatenate(([self.char_to_idx[self.go_token]], line)) for line in np.copy(input)]
+        decoder_input = [np.concatenate(([self.char_to_idx[self.go_token]], line)) for line in np.copy(input)]
+        decoder_target = [np.concatenate((line, [self.char_to_idx[self.stop_token]])) for line in np.copy(input)]
 
         '''Evaluate how much it is necessary to fill with pad tokens to make the same lengths'''
         to_add = [self.max_seq_len - len(input[i]) for i in range(batch_size)]
+        # print(len(encoder_input))
 
         for i in range(batch_size):
-            encoder_input[i] += [self.char_to_idx[self.pad_token]] * to_add[i]
-            decoder_input[i] += [self.char_to_idx[self.pad_token]] * to_add[i]
-            decoder_target[i] += [self.char_to_idx[self.pad_token]] * to_add[i]
+            # print(encoder_input[i].shape)
+            # print(encoder_input[i])
+            # print(to_add[i])
+            # print(np.array([self.char_to_idx[self.pad_token]] * to_add[i]).shape)
+
+            encoder_input[i] = np.concatenate((encoder_input[i], [self.char_to_idx[self.pad_token]] * to_add[i]))
+            decoder_input[i] = np.concatenate((decoder_input[i], [self.char_to_idx[self.pad_token]] * to_add[i]))
+            decoder_target[i] = np.concatenate((decoder_target[i], [self.char_to_idx[self.pad_token]] * to_add[i]))
 
         result = [np.array(var) for var in [encoder_input, decoder_input, decoder_target]]
         result = [Variable(t.from_numpy(var)).long() for var in result]

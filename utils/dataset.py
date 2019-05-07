@@ -68,7 +68,7 @@ class DatasetFromHdf5(data.Dataset):
             return padded_seqs, lengths
 
         # sort a list by sequence length (descending order) to use pack_padded_sequence
-        data.sort(key=lambda x: len(x[0]), reverse=True)
+        # data.sort(key=lambda x: len(x[0]), reverse=True)
 
         # seperate source and target sequences
         enc_seqs, dec_seqs, trg_seqs = zip(*data)
