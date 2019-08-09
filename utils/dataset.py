@@ -3,42 +3,29 @@ import torch
 import h5py
 import numpy as np
 
-
-class DatasetFromHdf5(data.Dataset):
-    def __init__(self, file_path, key, max_seq_len=209):
-        super().__init__()
-        hf = h5py.File(file_path, mode="r", swmr=True, libver='latest',)
-        self.data = hf.get(key).get("table")
-        # self.target = hf.get('title')
+class DatasetSkeleton(data.Dataset):
+    go_token = '>'
+    pad_token = ''
+    stop_token = '<'
+    def __init__(self, max_seq_len=209):
         self.max_seq_len = max_seq_len
-        self.go_token = '>'
-        self.pad_token = ''
-        self.stop_token = '<'
         self.vocab_size = None
         self.char_to_idx = None
         self.idx_to_char = None
-
-    def build_vocab(self, chunksize=1000):
-
-        chars = set()
-        for i in range(0, self.__len__(), chunksize):
-            res = set("".join([x[1].decode() for x in self.data[i:i + chunksize]]))
-            chars = set.union(*[chars, res])
-            # print(vocab)
-        chars = sorted(list(chars))
-
-        chars = chars + [self.pad_token, self.go_token, self.stop_token]
-        self.vocab_size = len(chars)
-
-        # mappings itself
-        self.idx_to_char = chars
-        self.char_to_idx = {x: i for i, x in enumerate(self.idx_to_char)}
-        return self.vocab_size, self.idx_to_char, self.char_to_idx
 
     def set_vocab(self, vocab_size, idx_to_char, char_to_idx):
         self.vocab_size = vocab_size
         self.char_to_idx = char_to_idx
         self.idx_to_char = idx_to_char
+
+    def torchify_example(self, example):
+        inp = [self.char_to_idx[char] for char in example]
+
+        encoder_input = np.array([self.char_to_idx[self.go_token]] + inp)
+        decoder_input = np.array([self.char_to_idx[self.go_token]] + inp)
+        decoder_target = np.array(inp + [self.char_to_idx[self.stop_token]])
+
+        return torch.from_numpy(encoder_input), torch.from_numpy(decoder_input), torch.from_numpy(decoder_target)
 
     def collate_fn(self, data):
         """Creates mini-batch tensors from the list of tuples (src_seq, trg_seq).
@@ -80,15 +67,42 @@ class DatasetFromHdf5(data.Dataset):
 
         return enc_seqs, dec_seqs, trg_seqs
 
+class DatasetFromHdf5(DatasetSkeleton):
+
+    def __init__(self, file_path, key, max_seq_len=209):
+        super().__init__()
+        hf = h5py.File(file_path, mode="r", swmr=True, libver='latest',)
+        self.data = hf.get(key).get("table")
+        # self.target = hf.get('title')
+        self.max_seq_len = max_seq_len
+        self.vocab_size = None
+        self.char_to_idx = None
+        self.idx_to_char = None
+
+    def build_vocab(self, chunksize=1000):
+
+        chars = set()
+        for i in range(0, self.__len__(), chunksize):
+            res = set("".join([x[1].decode() for x in self.data[i:i + chunksize]]))
+            chars = set.union(*[chars, res])
+            # print(vocab)
+        chars = sorted(list(chars))
+
+        chars = chars + [self.pad_token, self.go_token, self.stop_token]
+        self.vocab_size = len(chars)
+
+        # mappings itself
+        self.idx_to_char = chars
+        self.char_to_idx = {x: i for i, x in enumerate(self.idx_to_char)}
+        return self.vocab_size, self.idx_to_char, self.char_to_idx
+
+
+
+
+
     def __getitem__(self, index):
         example = self.data[index][1].decode()[:self.max_seq_len]
-        inp = [self.char_to_idx[char] for char in example]
-
-        encoder_input = np.array([self.char_to_idx[self.go_token]] + inp)
-        decoder_input = np.array([self.char_to_idx[self.go_token]] + inp)
-        decoder_target = np.array(inp + [self.char_to_idx[self.stop_token]])
-
-        return torch.from_numpy(encoder_input), torch.from_numpy(decoder_input), torch.from_numpy(decoder_target)
+        return self.torchify_example(example)
 
     def __len__(self):
         return self.data.shape[0]
