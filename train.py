@@ -71,6 +71,7 @@ def train(filename, num_iterations=35000, n_epochs=20, batch_size=300, use_cuda=
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         iteration = checkpoint['iteration']
         loss = checkpoint['loss']
+        start_epoch = checkpoint['epoch'] + 1
         train_results = checkpoint['train_results']
         valid_results = checkpoint['valid_results']
 
@@ -82,10 +83,11 @@ def train(filename, num_iterations=35000, n_epochs=20, batch_size=300, use_cuda=
         parameters = Parameters(batch_loader.vocab_size, embed_size=embed_size)
     else:
         iteration = -1
+        start_epoch = 0
         train_results = []
         valid_results = []
 
-    for epoch in range(n_epochs):
+    for epoch in range(start_epoch, start_epoch+n_epochs):
         scheduler = t.optim.lr_scheduler.CosineAnnealingLR(optimizer, num_iterations, learning_rate / learning_rate_scale)
         for iteration in range(iteration+1, iteration + num_iterations):
             if kld_weight:
@@ -165,13 +167,14 @@ def train(filename, num_iterations=35000, n_epochs=20, batch_size=300, use_cuda=
             t.save({
                 'model_state_dict': vae.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
-                ' scheduler_state_dict': scheduler.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict(),
                 'loss': loss,
                 'iteration': iteration,
                 'train_results': train_results,
                 'valid_results': valid_results,
                 'parameters': parameters.__dict__,
                 'batch_loader': {k: batch_loader.__dict__[k] for k in wanted_keys if k in batch_loader.__dict__},
+                'epoch': epoch,
             }, os.path.join(save_model_dir, f"vae{epoch}_{save_string}.tar"))
 
 def train_ds(filename, num_iterations=35000, n_epochs=20, batch_size=300, use_cuda=True,
@@ -229,6 +232,7 @@ def train_ds(filename, num_iterations=35000, n_epochs=20, batch_size=300, use_cu
             vae.to(device)
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         iteration = checkpoint['iteration']
+        start_epoch = checkpoint['epoch'] + 1
         loss = checkpoint['loss']
         train_results = checkpoint['train_results']
         valid_results = checkpoint['valid_results']
@@ -242,10 +246,11 @@ def train_ds(filename, num_iterations=35000, n_epochs=20, batch_size=300, use_cu
         parameters = Parameters(ds.vocab_size, embed_size=embed_size)
     else:
         iteration = 0
+        start_epoch = 0
         train_results = []
         valid_results = []
 
-    for epoch in range(n_epochs):
+    for epoch in range(start_epoch, start_epoch+n_epochs):
         scheduler = t.optim.lr_scheduler.CosineAnnealingLR(optimizer, num_iterations, learning_rate / learning_rate_scale)
         valid_iter = iter(validation_generator)
         for input, decoder_input, target in training_generator:
@@ -335,11 +340,12 @@ def train_ds(filename, num_iterations=35000, n_epochs=20, batch_size=300, use_cu
             t.save({
                 'model_state_dict': vae.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
-                ' scheduler_state_dict': scheduler.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict(),
                 'loss': loss,
                 'iteration': iteration,
                 'train_results': train_results,
                 'valid_results': valid_results,
+                'epoch': epoch,
                 'parameters': parameters.__dict__,
                 'batch_loader': {k: ds.__dict__[k] for k in wanted_keys if k in ds.__dict__},
             }, os.path.join(save_model_dir, f"vae{epoch}_{save_string}.tar"))
