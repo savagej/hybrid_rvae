@@ -31,13 +31,13 @@ def calculate_loss(input, decoder_input, target, vae, dropout, vocab_size):
 
 def train(filename, num_iterations=35000, n_epochs=20, batch_size=300, use_cuda=True,
           learning_rate=0.0005, learning_rate_scale=100, dropout=0, aux=0.2,
-          use_trained=None, kld_weight=4, embed_size=32, max_len=210, vocab=None, save_model_dir=None):
+          use_trained=None, kld_weight=4, embed_size=32, max_len=210, vocab=None, save_model_dir=None, save_log_dir="../logs"):
     wanted_keys = ['split', 'data_path', 'go_token', 'pad_token', 'stop_token', 'vocab_size',
                    'idx_to_char', 'char_to_idx', 'max_seq_len', 'data_len']
-    save_string = "ds-"+"-".join([str(x) for x in [num_iterations, batch_size, learning_rate, learning_rate_scale, dropout, aux, kld_weight, embed_size, max_len]])
+    save_string = "-".join([str(x) for x in [num_iterations, batch_size, learning_rate, learning_rate_scale, dropout, aux, kld_weight, embed_size, max_len]])
 
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO,
-                        filename='../logs_bl/{}.log'.format(save_string))
+                        filename=os.path.join(save_log_dir, '{}.log'.format(save_string)))
 
     # set up logging to console
     console = logging.StreamHandler()
@@ -94,6 +94,7 @@ def train(filename, num_iterations=35000, n_epochs=20, batch_size=300, use_cuda=
                 kld_w = 0
 
             '''Train step'''
+            vae.train()
             input, decoder_input, target = batch_loader.next_batch(batch_size, 'train', use_cuda)
 
             target = target.view(-1)
@@ -114,6 +115,7 @@ def train(filename, num_iterations=35000, n_epochs=20, batch_size=300, use_cuda=
             scheduler.step()
 
             '''Validation'''
+            vae.eval()
             input, decoder_input, target = batch_loader.next_batch(batch_size, 'valid', use_cuda)
             target = target.view(-1)
 
@@ -174,15 +176,15 @@ def train(filename, num_iterations=35000, n_epochs=20, batch_size=300, use_cuda=
 
 def train_ds(filename, num_iterations=35000, n_epochs=20, batch_size=300, use_cuda=True,
           learning_rate=0.0005, learning_rate_scale=100, dropout=0, aux=0.2,
-          use_trained=None, kld_weight=4, embed_size=32, max_len=210, vocab=None, save_model_dir=None):
+          use_trained=None, kld_weight=4, embed_size=32, max_len=210, vocab=None, save_model_dir=None, save_log_dir="../logs"):
     wanted_keys = ['split', 'data_path', 'go_token', 'pad_token', 'stop_token', 'vocab_size',
                    'idx_to_char', 'char_to_idx', 'max_seq_len', 'data_len']
-    save_string = "ds-"+"-".join([str(x) for x in [num_iterations, batch_size, learning_rate, learning_rate_scale, dropout, aux, kld_weight, embed_size, max_len]])
+    save_string = "-".join([str(x) for x in [num_iterations, batch_size, learning_rate, learning_rate_scale, dropout, aux, kld_weight, embed_size, max_len]])
 
     device = t.device("cuda:0" if use_cuda else "cpu")
 
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO,
-                        filename='../logs_bl/{}.log'.format(save_string))
+                        filename=os.path.join(save_log_dir, '{}.log'.format(save_string)))
 
     # set up logging to console
     console = logging.StreamHandler()
@@ -254,6 +256,7 @@ def train_ds(filename, num_iterations=35000, n_epochs=20, batch_size=300, use_cu
                 kld_w = 0
 
             '''Train step'''
+            vae.train()
             #input, decoder_input, target = batch_loader.next_batch(batch_size, 'train', use_cuda)
 
             target = target.view(-1)
@@ -274,6 +277,7 @@ def train_ds(filename, num_iterations=35000, n_epochs=20, batch_size=300, use_cu
             scheduler.step()
 
             '''Validation'''
+            vae.eval()
             try:
                 input_v, decoder_input_v, target_v = next(valid_iter)
             except StopIteration:
